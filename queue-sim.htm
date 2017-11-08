@@ -107,7 +107,7 @@
                 var g_simSpeed = null; 
                 var g_someObj = null;
                 var offscreenCanvas = null;
-                var xPos = 640;
+                var xPos = 0;
         
                 var g_jobs = [];
                 var g_activeJob = null;
@@ -118,6 +118,12 @@
                 var g_arrivalRate = 0;
                 var g_utilization = 0;
                 var g_latency = 0;
+
+
+
+                var g_latencyGraph = [];
+                var g_latencyGraphYScale = .1;
+                var g_latencyGraphPos = 0;
         
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
@@ -129,6 +135,27 @@
                     document.getElementById('ans_latencyServiceTime').innerText = waitTime.toString();
         
                     document.getElementById('span').innerText = utilization.toString();
+                }
+
+                function drawLatencyGraph(canvas) {                
+                    let ctx = canvas.getContext('2d');
+                    ctx.save();
+                    //ctx.fillRect(0, 0, aCanvas.width, aCanvas.height);
+                    ctx.beginPath();
+                    ctx.moveTo(0, canvas.height);
+                    for(let i=0; i<g_latencyGraph.length; i++) {
+                        let latency = g_latencyGraph[i];
+                        let x = i  * (canvas.width/g_latencyGraph.length);
+                        let y = canvas.height - latency * g_latencyGraphYScale;
+                        ctx.lineTo(x, y);                        
+                    }
+                    ctx.lineTo(canvas.width, canvas.height);                    
+                    ctx.closePath();
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+
                 }
         
                 function drawLatenctServiceTimeGraph(targetCanvas) {
@@ -161,10 +188,12 @@
                     ctx.fillStyle = "#ffffff";    
                     ctx.strokeStyle = "#0000ff";                
                     ctx.stroke();  
-                    ctx.restore();              
-        
-                    xPos -= 1;
-                    if (xPos <= 0) xPos = offscreenCanvas.width;
+                    ctx.restore();       
+
+                    drawLatencyGraph(offscreenCanvas);       
+
+                    xPos++;
+                    if (xPos > offscreenCanvas.width) xPos = 0;
         
                     ctx.save();
                     ctx.beginPath();
@@ -212,12 +241,19 @@
         
                     requestAnimationFrame(updateGraphics);           
                 }
+
+                function calcNewAutoAddJobsMs() {
+                    autoAddJobMs_from = Number(document.getElementById('inp_autoAddMs_from').value);
+                    autoAddJobMs_to = Number(document.getElementById('inp_autoAddMs_to').value);
+                    g_autoAddJobMs = Math.random() * (autoAddJobMs_to -  autoAddJobMs_from) + autoAddJobMs_from;
+                }
         
                 function tick() {
                     if(g_autoAddJobMs >= 10 ) {
                         if((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs) {
                             addJobsToQueue();
                             g_lastTimeAutoAdded = (new Date()).getTime();
+                            calcNewAutoAddJobsMs();
                         }
                     }
                     
@@ -254,6 +290,21 @@
                         g_latency = Math.round(g_latency);
                         job.tick();                    
                     }
+
+                    if(xPos % 10 == 0) {
+                        g_latencyGraph.push(g_latency);                        
+                        if(g_latencyGraph.length > 61) {
+                            g_latencyGraph.shift();
+                        }                      
+                    }
+
+                    if(g_latency > 6000) {
+                        g_latencyGraphYScale = .01;
+                    } else if(g_latency > 600) {
+                        g_latencyGraphYScale = .1;
+                    } else {
+                        g_latencyGraphYScale = 1;
+                    } 
                 }
         
                 function createNewJob(capacity) {
@@ -263,8 +314,7 @@
                         let lastJob = g_jobs[g_jobs.length - 1];                
                         job.setHead(lastJob);
                         lastJob.setBack(job);
-                    }
-                    
+                    }                    
                     
                     g_jobs.push(job);
                     return job;
@@ -290,7 +340,7 @@
         
                 function toggleAutoAdd(checkElem) {
                     if(checkElem.checked) {
-                        g_autoAddJobMs = Number(document.getElementById('inp_autoAddMs').value);
+                        calcNewAutoAddJobsMs();              
                     }
                     else {
                         g_autoAddJobMs = 0;
@@ -311,6 +361,10 @@
         
                     let targetCanvas = document.getElementById("queueGraph");
                     let ctx = targetCanvas.getContext("2d");
+
+                    for(let i=0; i< g_latencyGraph.length; i++) {
+                        g_latencyGraph[i] = 0;
+                    }
         
                     g_simSpeed = window.setInterval(tick, 10);
         
@@ -375,7 +429,7 @@
             Add <input id="inp_addJobsCount" type="number" value="1"/> jobs with service time of [ <input id="inp_addJobsServTime_from" type="number" min="10" max="1000" value="1000"/>
              to <input id="inp_addJobsServTime_to" type="number" min="10" max="1000" value="1000"/> ]
             <button onclick="addJobsToQueue();"> Add </button>
-            <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" text="Every"/> Every <input id="inp_autoAddMs" type="number" min="10" max="1000" value="500" onchange="toggleAutoAdd(document.getElementById('inp_checkAutoAdd'));"/>ms 
+            <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" text="Every"/> Every [ <input id="inp_autoAddMs_from" type="number" min="10" max="10000" value="500"/> to  <input id="inp_autoAddMs_to" type="number" min="10" max="10000" value="500"/> ] ms 
             </div>
         
             <div style="background-color:black;"><canvas id="queueGraph" width="600" height="600"></canvas></div>
