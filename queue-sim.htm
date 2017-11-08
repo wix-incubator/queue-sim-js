@@ -124,6 +124,7 @@
                 var g_latencyGraph = [];
                 var g_latencyGraphYScale = .1;
                 var g_latencyGraphPos = 0;
+                var g_useLatencyGraphType_1 = false;
         
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
@@ -145,7 +146,7 @@
                     ctx.moveTo(0, canvas.height);
                     for(let i=0; i<g_latencyGraph.length; i++) {
                         let latency = g_latencyGraph[i];
-                        let x = i  * (canvas.width/g_latencyGraph.length);
+                        let x = i * (canvas.width/g_latencyGraph.length);
                         let y = canvas.height - latency * g_latencyGraphYScale;
                         ctx.lineTo(x, y);                        
                     }
@@ -192,17 +193,16 @@
 
                     drawLatencyGraph(offscreenCanvas);       
 
-                    xPos++;
-                    if (xPos > offscreenCanvas.width) xPos = 0;
-        
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(xPos, 0);
-                    ctx.lineTo(xPos, offscreenCanvas.height);
-                    ctx.strokeStyle = "#ff0000";
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.restore();
+                    if(!g_useLatencyGraphType_1) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(xPos, 0);
+                        ctx.lineTo(xPos, offscreenCanvas.height);
+                        ctx.strokeStyle = "#ff0000";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
     
                     //draw queue size label:
                     ctx.save();      
@@ -250,7 +250,7 @@
         
                 function tick() {
                     if(g_autoAddJobMs >= 10 ) {
-                        if((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs) {
+                        if((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs / g_simSpeed) {
                             addJobsToQueue();
                             g_lastTimeAutoAdded = (new Date()).getTime();
                             calcNewAutoAddJobsMs();
@@ -291,16 +291,21 @@
                         job.tick();                    
                     }
 
-                    if(xPos % 10 == 0) {
+                    xPos++;
+                    if (xPos >= offscreenCanvas.width ) xPos = 0;
+
+                    if(g_useLatencyGraphType_1) {                        
                         g_latencyGraph.push(g_latency);                        
-                        if(g_latencyGraph.length > 61) {
+                        if(g_latencyGraph.length >= offscreenCanvas.width) {
                             g_latencyGraph.shift();
-                        }                      
+                        } 
+                    } else {                        
+                        g_latencyGraph[xPos] = g_latency;                        
                     }
 
-                    if(g_latency > 6000) {
+                    if(g_latency > 2000) {
                         g_latencyGraphYScale = .01;
-                    } else if(g_latency > 600) {
+                    } else if(g_latency > 200) {
                         g_latencyGraphYScale = .1;
                     } else {
                         g_latencyGraphYScale = 1;
@@ -350,6 +355,14 @@
                 function clearJobsQueue() {
                     g_jobs = [];
                     g_activeJob = null;
+                    initLatencyGraph();
+                }
+
+                function initLatencyGraph() {
+                    g_latencyGraph = [];
+                    for(let i=0; i<offscreenCanvas.width; i++) {
+                        g_latencyGraph.push(0);
+                    }
                 }
         
              function init() {
@@ -362,9 +375,7 @@
                     let targetCanvas = document.getElementById("queueGraph");
                     let ctx = targetCanvas.getContext("2d");
 
-                    for(let i=0; i< g_latencyGraph.length; i++) {
-                        g_latencyGraph[i] = 0;
-                    }
+                    clearJobsQueue();
         
                     g_simSpeed = window.setInterval(tick, 10);
         
@@ -384,7 +395,7 @@
                 #div_queueSim {
                     background-color: #1a1a1a;
                     border-style:solid; border-width:1px; border-radius:4px;
-                    width: 600px;
+                    width: 700px;
                 }              
     
                 input {
@@ -422,7 +433,7 @@
             <div id="div_queueSim">
             <h3>Queue Simulator</h1>
             <div>
-                Simulation speed: <input id="inp_simSpeed" type="range" min="1" max="10" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/>
+                <!-- Simulation speed: <input id="inp_simSpeed" type="range" min="1" max="10" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/> -->
                 <button id="but_clearQueue" onclick="clearJobsQueue();">Clear Queue</button>
             </div>
     
