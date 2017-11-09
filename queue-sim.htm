@@ -42,7 +42,7 @@
 
         SimObject.prototype.draw = function (x, y, targetCanvas) {
             let ctx = this.canvas.getContext('2d');
-            //ctx.translate(.5, .5);
+            ctx.translate(.5, .5);
             ctx.fillStyle = "#ff0000";
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             ctx.rect(0, 0, this.width, this.height);
@@ -102,10 +102,11 @@
     </script>
 
     <script>        
+                var g_queueGraphCanvas = null;
                 var g_simSpeed = 10;
                 var g_someObj = null;
-                var offscreenCanvas = null;
-                var xPos = 0;
+                var g_offscreenCanvas = null;
+                var g_xPos = 0;
 
                 var g_jobs = [];
                 var g_activeJob = null;
@@ -127,7 +128,6 @@
                     let utilization = Number(document.getElementById('inp_utilization').value);                    
                     let waitTime = serviceTime / (1.0 - (utilization / 100.0));                    
                     document.getElementById('ans_latencyServiceTime').innerText = waitTime.toString();
-
                     document.getElementById('span').innerText = utilization.toString();
                 }
 
@@ -168,29 +168,29 @@
                     ctx.restore();
                 }                       
 
-                function drawLatenctServiceTimeGraph(targetCanvas) {                    
-                    offscreenCanvas.width = targetCanvas.width;
-                    offscreenCanvas.height = targetCanvas.height;
-                    let ctx = offscreenCanvas.getContext("2d");
-                    ctx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                    ctx.translate(.5, .5);
+                function updateSimGraphics() {                    
+                    g_offscreenCanvas.width = g_queueGraphCanvas.width;
+                    g_offscreenCanvas.height = g_queueGraphCanvas.height;
+                    let ctx = g_offscreenCanvas.getContext("2d");
+                    ctx.clearRect(0, 0, g_offscreenCanvas.width, g_offscreenCanvas.height);
+                    ctx.translate(.5, .5); //required to make the lines sharp
 
                     //draw background:
                     ctx.save();
                     ctx.lineWidth = 1;
                     ctx.fillStyle = "#e0e0e0";
-                    ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                    ctx.fillRect(0, 0, g_offscreenCanvas.width, g_offscreenCanvas.height);
                     ctx.restore();
 
                     //draw grid:
                     ctx.beginPath();
                     let graphRes = 6;
                     for (let i = 0; i < graphRes; i++) {
-                        ctx.moveTo(0, i * offscreenCanvas.height / graphRes);
-                        ctx.lineTo(offscreenCanvas.width, i * offscreenCanvas.height / graphRes);
+                        ctx.moveTo(0, i * g_offscreenCanvas.height / graphRes);
+                        ctx.lineTo(g_offscreenCanvas.width, i * g_offscreenCanvas.height / graphRes);
 
-                        ctx.moveTo(i * offscreenCanvas.width / graphRes, 0);
-                        ctx.lineTo(i * offscreenCanvas.width / graphRes, offscreenCanvas.height);
+                        ctx.moveTo(i * g_offscreenCanvas.width / graphRes, 0);
+                        ctx.lineTo(i * g_offscreenCanvas.width / graphRes, g_offscreenCanvas.height);
                     }
                     ctx.fillStyle = "#ffffff";
                     ctx.strokeStyle = "#0000ff";
@@ -198,14 +198,14 @@
                     ctx.restore();
 
                     //draw latency graph:
-                    drawLatencyGraph(offscreenCanvas);
+                    drawLatencyGraph(g_offscreenCanvas);
 
                     //draw heart-beat vertical line:
                     if (!g_useLatencyGraphType_1) {
                         ctx.save();
                         ctx.beginPath();
-                        ctx.moveTo(xPos, 0);
-                        ctx.lineTo(xPos, offscreenCanvas.height);
+                        ctx.moveTo(g_xPos, 0);
+                        ctx.lineTo(g_xPos, g_offscreenCanvas.height);
                         ctx.strokeStyle = "rgba(0, 0, 0, .5)";
                         ctx.lineWidth = 2;
                         ctx.stroke();
@@ -229,25 +229,23 @@
 
                     //draw frame:
                     ctx.strokeStyle = "#000000";
-                    ctx.rect(0, 0, offscreenCanvas.width - .5, offscreenCanvas.height - .5);
+                    ctx.rect(0, 0, g_offscreenCanvas.width - .5, g_offscreenCanvas.height - .5);
                     ctx.stroke();
 
                     //draw jobs:
                     g_jobs.forEach((job) => {
                         if (job.x >= 0) {
-                            job.draw(offscreenCanvas);
+                            job.draw(g_offscreenCanvas);
                         }
                     });
 
                     //bitblt offscreen canvas on main canvas:
-                    targetCanvas.getContext('2d').drawImage(offscreenCanvas, 0, 0);
+                    g_queueGraphCanvas.getContext('2d').drawImage(g_offscreenCanvas, 0, 0);
                 }
 
-                function updateGraphics() {
-                    let canvas = document.getElementById("queueGraph");
-                    drawLatenctServiceTimeGraph(canvas);
-
-                    requestAnimationFrame(updateGraphics);
+                function updateSim() {          
+                    updateSimData();          
+                    updateSimGraphics();                    
                 }
 
                 function calcNewAutoAddJobsMs() {
@@ -256,7 +254,7 @@
                     g_autoAddJobMs = Math.random() * (autoAddJobMs_to - autoAddJobMs_from) + autoAddJobMs_from;
                 }
 
-                function tick() {                
+                function updateSimData() {                
                     if (g_autoAddJobMs >= 1) {
                         if ((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs) {
                             addJobsToQueue();
@@ -299,16 +297,16 @@
                     }
                     g_latency = Math.round(g_latency);
 
-                    xPos++;
-                    if (xPos >= offscreenCanvas.width) xPos = 0;
+                    g_xPos++;
+                    if (g_xPos >= g_offscreenCanvas.width) g_xPos = 0;
 
                     if (g_useLatencyGraphType_1) {
                         g_latencyGraph.push({value:g_latency, scaled:0});
-                        if (g_latencyGraph.length >= offscreenCanvas.width) {
+                        if (g_latencyGraph.length >= g_offscreenCanvas.width) {
                             g_latencyGraph.shift();
                         }
                     } else {
-                        g_latencyGraph[xPos] = {value: g_latency, scaled: 0};
+                        g_latencyGraph[g_xPos] = {value: g_latency, scaled: 0};
                     }
 
                     let topLatency = g_latency;
@@ -364,8 +362,8 @@
 
                 function changeSimSpeed() {
                     g_simSpeed = Number(document.getElementById("inp_simSpeed").value);                    
-                    clearInterval(g_simSpeedHandle);
-                    g_simSpeedHandle = setInterval(tick, g_simSpeed);
+                    window.clearInterval(g_simSpeedHandle);
+                    g_simSpeedHandle = window.setInterval(updateSim, g_simSpeed);
                 }
 
                 function toggleAutoAdd(checkElem) {
@@ -385,33 +383,25 @@
 
                 function initLatencyGraph() {
                     g_latencyGraph = [];
-                    for (let i = 0; i < offscreenCanvas.width; i++) {
+                    for (let i = 0; i < g_offscreenCanvas.width; i++) {
                         g_latencyGraph.push({value:0, scaled: 0});
                     }
                 }
 
                 function init() {
-
                     console.log("init called");
 
-                    offscreenCanvas = document.createElement('canvas');
-                    offscreenCanvas.getContext('2d').translate(-.5, -.5);
-
-                    let targetCanvas = document.getElementById("queueGraph");
-                    let ctx = targetCanvas.getContext("2d");        
+                    g_queueGraphCanvas = document.getElementById('queueGraph');
+                    g_offscreenCanvas = document.createElement('canvas');
+                    g_offscreenCanvas.getContext('2d').translate(-.5, -.5);                            
                     
-                    initLatencyGraph();
-
-                    g_simSpeedHandle = window.setInterval(tick, g_simSpeed);
-
+                    clearJobsQueue();                    
                     calcLatencyServiceTime();
-
-                    updateGraphics();
-
+                    updateSim();                    
                     clearJobsQueue();
+
+                    g_simSpeedHandle = window.setInterval(updateSim, g_simSpeed);
                 }
-
-
     </script>
 
     <style>
@@ -469,7 +459,7 @@
         <div id="div_queueSim">
             <h3>Queue Simulator</h1>
                 <div>
-                    <!-- Simulation speed: <input id="inp_simSpeed" type="range" min="1" max="10" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/> -->
+                    Simulation speed: <input id="inp_simSpeed" type="range" min="10" max="100" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/>
                     <button id="but_clearQueue" onclick="clearJobsQueue();">Clear Queue</button>
                 </div>
 
