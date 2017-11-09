@@ -145,9 +145,9 @@
                     ctx.beginPath();
                     ctx.moveTo(0, canvas.height);
                     for (let i = 0; i < g_latencyGraph.length; i++) {
-                        let latency = g_latencyGraph[i];
+                        let latency = g_latencyGraph[i].scaled;
                         let x = i * (canvas.width / g_latencyGraph.length);
-                        let y = canvas.height - latency * g_latencyGraphYScale;
+                        let y = canvas.height - latency;
                         ctx.lineTo(x, y);
                     }
                     ctx.lineTo(canvas.width, canvas.height);
@@ -304,29 +304,34 @@
                     if (xPos >= offscreenCanvas.width) xPos = 0;
 
                     if (g_useLatencyGraphType_1) {
-                        g_latencyGraph.push(g_latency);
+                        g_latencyGraph.push({value:g_latency, scaled:0});
                         if (g_latencyGraph.length >= offscreenCanvas.width) {
                             g_latencyGraph.shift();
                         }
                     } else {
-                        g_latencyGraph[xPos] = g_latency;
+                        g_latencyGraph[xPos] = {value: g_latency, scaled: 0};
                     }
 
-                    let topLatency = 0;
-                    for(let i=0; i < g_latencyGraph.length; i++) {
-                        if(g_latencyGraph[i] > topLatency) {
-                            topLatency = g_latencyGraph[i];
-                        }
+                    let topLatency = g_latency;
+                    for(let i=0; i < g_latencyGraph.length; i++) {                        
+                        if(g_latencyGraph[i].value > topLatency) {
+                            topLatency = g_latencyGraph[i].value;
+                        }                        
                     }                    
 
                     //latency graph auto scaling:
                     let f = topLatency;
-                    let p = 1;
+                    let p = 0;
                     while (f > 200.0) {
                         f /= 10.0;                                                
-                        p /= 10.0;                                                
+                        p++;                                                
                     }
-                    g_latencyGraphYScale = p;
+                    let scaler = 1 / Math.pow(10, p);   
+                    g_latencyGraphYScale = scaler;
+
+                    for(let i=0; i < g_latencyGraph.length; i++) { 
+                        g_latencyGraph[i].scaled = g_latencyGraph[i].value * scaler;
+                    }                                    
                 }
 
                 function createNewJob(capacity) {
@@ -378,7 +383,7 @@
                 function initLatencyGraph() {
                     g_latencyGraph = [];
                     for (let i = 0; i < offscreenCanvas.width; i++) {
-                        g_latencyGraph.push(0);
+                        g_latencyGraph.push({value:0, scaled: 0});
                     }
                 }
 
