@@ -102,7 +102,7 @@
     </script>
 
     <script>        
-                var g_simSpeed = null;
+                var g_simSpeed = 10;
                 var g_someObj = null;
                 var offscreenCanvas = null;
                 var xPos = 0;
@@ -168,7 +168,7 @@
                     ctx.restore();
                 }                       
 
-                function drawLatenctServiceTimeGraph(targetCanvas) {
+                function drawLatenctServiceTimeGraph(targetCanvas) {                    
                     offscreenCanvas.width = targetCanvas.width;
                     offscreenCanvas.height = targetCanvas.height;
                     let ctx = offscreenCanvas.getContext("2d");
@@ -256,9 +256,9 @@
                     g_autoAddJobMs = Math.random() * (autoAddJobMs_to - autoAddJobMs_from) + autoAddJobMs_from;
                 }
 
-                function tick() {
-                    if (g_autoAddJobMs >= 10) {
-                        if ((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs / g_simSpeed) {
+                function tick() {                
+                    if (g_autoAddJobMs >= 1) {
+                        if ((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs) {
                             addJobsToQueue();
                             g_lastTimeAutoAdded = (new Date()).getTime();
                             calcNewAutoAddJobsMs();
@@ -363,10 +363,9 @@
                 }
 
                 function changeSimSpeed() {
-                    let speed = Number(document.getElementById("inp_simSpeed").value);
-                    let newSpeed = speed;
-                    clearInterval(g_simSpeed);
-                    g_simSpeed = setInterval(tick, newSpeed);
+                    g_simSpeed = Number(document.getElementById("inp_simSpeed").value);                    
+                    clearInterval(g_simSpeedHandle);
+                    g_simSpeedHandle = setInterval(tick, g_simSpeed);
                 }
 
                 function toggleAutoAdd(checkElem) {
@@ -401,8 +400,9 @@
                     let targetCanvas = document.getElementById("queueGraph");
                     let ctx = targetCanvas.getContext("2d");        
                     
+                    initLatencyGraph();
 
-                    g_simSpeed = window.setInterval(tick, 10);
+                    g_simSpeedHandle = window.setInterval(tick, g_simSpeed);
 
                     calcLatencyServiceTime();
 
