@@ -124,11 +124,8 @@
 
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
-                    let utilization = Number(document.getElementById('inp_utilization').value);
-                    console.log("serviceTime=" + serviceTime);
-                    console.log("utilization=" + utilization);
-                    let waitTime = serviceTime / (1.0 - (utilization / 100.0));
-                    console.log("waitTime=" + waitTime);
+                    let utilization = Number(document.getElementById('inp_utilization').value);                    
+                    let waitTime = serviceTime / (1.0 - (utilization / 100.0));                    
                     document.getElementById('ans_latencyServiceTime').innerText = waitTime.toString();
 
                     document.getElementById('span').innerText = utilization.toString();
@@ -294,14 +291,14 @@
                     for (let i = 0; i < g_jobs.length; i++) {
                         let job = g_jobs[i];
                         if (i == 0) {
-                            g_latency += job.capacity - job.jobPerformed;
+                            g_latency += job.capacity*10 - job.jobPerformed;
                         }
                         if (i > 0) {
-                            g_latency += job.capacity;
+                            g_latency += job.capacity*10;
                         }
-                        g_latency = Math.round(g_latency);
                         job.tick();
                     }
+                    g_latency = Math.round(g_latency);
 
                     xPos++;
                     if (xPos >= offscreenCanvas.width) xPos = 0;
@@ -315,20 +312,19 @@
                         g_latencyGraph[xPos] = g_latency;
                     }
 
-
-                    //latency graph auto scaling: 
                     let topLatency = 0;
-                    g_latencyGraph.forEach((item) => {
-                        if(item > topLatency) {
-                            topLatency = item;
+                    for(let i=0; i < g_latencyGraph.length; i++) {
+                        if(g_latencyGraph[i] > topLatency) {
+                            topLatency = g_latencyGraph[i];
                         }
-                    });
+                    }                    
 
+                    //latency graph auto scaling:
                     let f = topLatency;
                     let p = 1;
-                    while (f >= 200) {
-                        f /= 10;
-                        p /= 10;
+                    while (f > 200.0) {
+                        f /= 10.0;                                                
+                        p /= 10.0;                                                
                     }
                     g_latencyGraphYScale = p;
                 }
@@ -342,8 +338,7 @@
                         lastJob.setBack(job);
                     }
 
-                    g_jobs.push(job);
-                    console.log("jobs: " + g_jobs.length);
+                    g_jobs.push(job);                    
                     return job;
                 }
 
