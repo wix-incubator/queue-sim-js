@@ -1,117 +1,117 @@
 <html>
-        
-        <head>
-            <script>
-                function SimObject(width, height) {
-                    this.x = 0;
-                    this.y = 0;
-                    this.width = width;
-                    this.height = height;
-                    this.text = "SimObj";
-                    this.headSimObj = null;
-                    this.backSimObj = null;
-        
-                    this.canvas = document.createElement('canvas');
-                    this.canvas.width = width;
-                    this.canvas.height = height;
+
+<head>
+    <script>
+        function SimObject(width, height) {
+            this.x = 0;
+            this.y = 0;
+            this.width = width;
+            this.height = height;
+            this.text = "SimObj";
+            this.headSimObj = null;
+            this.backSimObj = null;
+
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+
+        SimObject.prototype.setHead = function (headSimObj) {
+            this.headSimObj = headSimObj;
+        }
+
+        SimObject.prototype.setBack = function (backSimObj) {
+            this.backSimObj = this.headSimObj;
+        }
+
+        SimObject.prototype.setPos = function (x, y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        SimObject.prototype.setText = function (text) {
+            this.text = text;
+        }
+
+        SimObject.prototype.moveX = function (deltaX) {
+            this.x += deltaX;
+            if (this.backSimObj) {
+                this.backSimObj.moveX(deltaX);
+            }
+        }
+
+        SimObject.prototype.draw = function (x, y, targetCanvas) {
+            let ctx = this.canvas.getContext('2d');
+            //ctx.translate(.5, .5);
+            ctx.fillStyle = "#ff0000";
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.rect(0, 0, this.width, this.height);
+            ctx.fillRect(0, 0, this.width, this.height);
+
+            ctx.fillStyle = "#000000";
+            ctx.textAlign = 'center';
+            ctx.font = '14px sans-serif';
+            ctx.fillText(this.text, this.width / 2, this.height / 2);
+
+            targetCanvas.getContext('2d').drawImage(this.canvas, x, y);
+        }
+
+
+        function SimJob(capacity) {
+            this.capacity = capacity;
+            this.jobPerformed = 0;
+            this.active = false;
+            SimObject.call(this, 10, this.capacity);
+        }
+        SimJob.prototype = Object.create(SimObject.prototype);
+        SimJob.prototype.constructor = SimJob;
+
+        SimJob.prototype.setActive = function (active) {
+            this.active = active;
+        }
+
+        SimJob.prototype.draw = function (targetCanvas) {
+            //SimObject.prototype.draw.call(this, this.x, this.y, targetCanvas);
+            let ctx = this.canvas.getContext('2d');
+            ctx.fillStyle = "#7e7e7e";
+            ctx.fillRect(0, 0, this.width, this.height);
+
+            //draw the job performed
+            ctx.fillStyle = "#0000ff";
+            ctx.fillRect(0, this.height - this.jobPerformed, this.width, this.jobPerformed);
+            ctx.strokeRect(0, 0, this.width, this.height);
+
+            targetCanvas.getContext('2d').drawImage(this.canvas, this.x, this.y);
+        }
+
+        SimJob.prototype.tick = function () {
+
+            if (this.headSimObj) {
+                this.x = this.headSimObj.x - 2 - this.width;
+            } else {
+                this.x = 600 - this.width * 2;
+            }
+            this.y = 400 - this.height;
+
+            if (this.active) {
+                this.jobPerformed++;
+                if (this.jobPerformed >= this.capacity) {
+                    //TODO: Fire job done notification
+                    this.jobPerformed = this.capacity;
                 }
-        
-                SimObject.prototype.setHead = function (headSimObj) {
-                    this.headSimObj = headSimObj;
-                }
-        
-                SimObject.prototype.setBack = function (backSimObj) {
-                    this.backSimObj = this.headSimObj;
-                }
-        
-                SimObject.prototype.setPos = function (x, y) {
-                    this.x = x;
-                    this.y = y;
-                }
-        
-                SimObject.prototype.setText = function (text) {
-                    this.text = text;
-                }
-        
-                SimObject.prototype.moveX = function(deltaX) {
-                    this.x += deltaX;
-                    if(this.backSimObj) {
-                        this.backSimObj.moveX(deltaX);
-                    }
-                }
-        
-                SimObject.prototype.draw = function (x, y, targetCanvas) {
-                    let ctx = this.canvas.getContext('2d');
-                    //ctx.translate(.5, .5);
-                    ctx.fillStyle = "#ff0000";
-                    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    ctx.rect(0, 0, this.width, this.height);
-                    ctx.fillRect(0, 0, this.width, this.height);
-        
-                    ctx.fillStyle = "#000000";
-                    ctx.textAlign = 'center';
-                    ctx.font = '14px sans-serif';
-                    ctx.fillText(this.text, this.width / 2, this.height / 2);
-        
-                    targetCanvas.getContext('2d').drawImage(this.canvas, x, y);
-                }
-        
-        
-                function SimJob(capacity) {
-                    this.capacity = capacity;
-                    this.jobPerformed = 0;
-                    this.active = false;
-                    SimObject.call(this, 10, this.capacity);
-                }
-                SimJob.prototype = Object.create(SimObject.prototype);
-                SimJob.prototype.constructor = SimJob;
-        
-                SimJob.prototype.setActive = function(active) {
-                    this.active = active;
-                }
-        
-                SimJob.prototype.draw = function (targetCanvas) {
-                    //SimObject.prototype.draw.call(this, this.x, this.y, targetCanvas);
-                    let ctx = this.canvas.getContext('2d');
-                    ctx.fillStyle = "#7e7e7e";
-                    ctx.fillRect(0, 0, this.width, this.height);
-        
-                    //draw the job performed
-                    ctx.fillStyle = "#0000ff";
-                    ctx.fillRect(0, this.height-this.jobPerformed, this.width, this.jobPerformed);
-                    ctx.strokeRect(0, 0, this.width, this.height);
-        
-                    targetCanvas.getContext('2d').drawImage(this.canvas, this.x, this.y);
-                } 
-        
-                SimJob.prototype.tick = function() {
-        
-                    if(this.headSimObj) {
-                        this.x = this.headSimObj.x - 2 - this.width;                
-                    } else {
-                        this.x = 600 - this.width * 2;               
-                    }
-                    this.y = 400 - this.height;
-        
-                    if(this.active) {
-                        this.jobPerformed++;
-                        if(this.jobPerformed >= this.capacity) {
-                            //TODO: Fire job done notification
-                            this.jobPerformed = this.capacity;
-                        }
-                    }
-                }
-            </script>
-        
-            <script>        
-                var g_simSpeed = null; 
+            }
+        }
+    </script>
+
+    <script>        
+                var g_simSpeed = null;
                 var g_someObj = null;
                 var offscreenCanvas = null;
                 var xPos = 0;
-        
+
                 var g_jobs = [];
                 var g_activeJob = null;
-        
+
                 var g_autoAddJobMs = 0;
                 var g_lastTimeAutoAdded = 0;
 
@@ -125,7 +125,7 @@
                 var g_latencyGraphYScale = .1;
                 var g_latencyGraphPos = 0;
                 var g_useLatencyGraphType_1 = false;
-        
+
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
                     let utilization = Number(document.getElementById('inp_utilization').value);
@@ -134,79 +134,97 @@
                     let waitTime = serviceTime / (1.0 - (utilization / 100.0));
                     console.log("waitTime=" + waitTime);
                     document.getElementById('ans_latencyServiceTime').innerText = waitTime.toString();
-        
+
                     document.getElementById('span').innerText = utilization.toString();
                 }
 
-                function drawLatencyGraph(canvas) {                
+                function drawLatencyGraph(canvas) {
                     let ctx = canvas.getContext('2d');
                     ctx.save();
-                    //ctx.fillRect(0, 0, aCanvas.width, aCanvas.height);
+                    ctx.fillStyle = "rgba(127, 127, 127, .5)";
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(0, canvas.height - 200, canvas.width, 200);
+                    ctx.strokeRect(0, canvas.height - 200, canvas.width, 200);
+                    ctx.restore();
+
+                    ctx.save();
                     ctx.beginPath();
                     ctx.moveTo(0, canvas.height);
-                    for(let i=0; i<g_latencyGraph.length; i++) {
+                    for (let i = 0; i < g_latencyGraph.length; i++) {
                         let latency = g_latencyGraph[i];
-                        let x = i * (canvas.width/g_latencyGraph.length);
+                        let x = i * (canvas.width / g_latencyGraph.length);
                         let y = canvas.height - latency * g_latencyGraphYScale;
-                        ctx.lineTo(x, y);                        
+                        ctx.lineTo(x, y);
                     }
-                    ctx.lineTo(canvas.width, canvas.height);                    
+                    ctx.lineTo(canvas.width, canvas.height);
                     ctx.closePath();
                     ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
                     ctx.fill();
                     ctx.stroke();
                     ctx.restore();
 
+                    ctx.save();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.strokeStyle = "#000000";
+                    let scaleText = "Scale: " + g_latencyGraphYScale;
+                    ctx.textAlign = "start";
+                    ctx.font = "small-caption";
+                    ctx.fillText(scaleText, 10, canvas.height - 20);
+                    ctx.strokeText(scaleText, 10, canvas.height - 20);
+                    ctx.restore();
+
                 }
-        
+
                 function drawLatenctServiceTimeGraph(targetCanvas) {
-        
+
                     offscreenCanvas.width = targetCanvas.width;
                     offscreenCanvas.height = targetCanvas.height;
                     let ctx = offscreenCanvas.getContext("2d");
                     ctx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
                     ctx.translate(.5, .5);
-        
+
+                    //draw background:
                     ctx.save();
                     ctx.lineWidth = 1;
-                    //ctx.lineCap='square';
-        
-                    //draw background:
                     ctx.fillStyle = "#e0e0e0";
                     ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
                     ctx.restore();
-        
-                    
-                    ctx.beginPath();    
+
+                    //draw grid:
+                    ctx.beginPath();
                     let graphRes = 6;
                     for (let i = 0; i < graphRes; i++) {
                         ctx.moveTo(0, i * offscreenCanvas.height / graphRes);
                         ctx.lineTo(offscreenCanvas.width, i * offscreenCanvas.height / graphRes);
-        
+
                         ctx.moveTo(i * offscreenCanvas.width / graphRes, 0);
                         ctx.lineTo(i * offscreenCanvas.width / graphRes, offscreenCanvas.height);
                     }
-                    ctx.fillStyle = "#ffffff";    
-                    ctx.strokeStyle = "#0000ff";                
-                    ctx.stroke();  
-                    ctx.restore();       
+                    ctx.fillStyle = "#ffffff";
+                    ctx.strokeStyle = "#0000ff";
+                    ctx.stroke();
+                    ctx.restore();
 
-                    drawLatencyGraph(offscreenCanvas);       
+                    //draw latency graph:
+                    drawLatencyGraph(offscreenCanvas);
 
-                    if(!g_useLatencyGraphType_1) {
+
+                    //draw heart-beat vertical line:
+                    if (!g_useLatencyGraphType_1) {
                         ctx.save();
                         ctx.beginPath();
                         ctx.moveTo(xPos, 0);
                         ctx.lineTo(xPos, offscreenCanvas.height);
-                        ctx.strokeStyle = "#ff0000";
+                        ctx.strokeStyle = "rgba(0, 0, 0, .5)";
                         ctx.lineWidth = 2;
                         ctx.stroke();
                         ctx.restore();
                     }
-    
+
                     //draw queue size label:
-                    ctx.save();      
-                    ctx.beginPath();          
+                    ctx.save();
+                    ctx.beginPath();
                     ctx.fillStyle = "#ffffff";
                     ctx.strokeStyle = "#000000"
                     ctx.fillRect(5, 5, 590, 20);
@@ -217,141 +235,143 @@
                     ctx.fillText(queueSizeLabel, 10, 20);
                     ctx.strokeText(queueSizeLabel, 10, 20);
                     ctx.stroke();
-                    ctx.restore();                
-        
+                    ctx.restore();
+
                     //draw frame:
                     ctx.strokeStyle = "#000000";
-                    ctx.rect(0, 0, offscreenCanvas.width - .5, offscreenCanvas.height - .5);    
+                    ctx.rect(0, 0, offscreenCanvas.width - .5, offscreenCanvas.height - .5);
                     ctx.stroke();
-    
+
                     //draw jobs:
                     g_jobs.forEach((job) => {
-                        if(job.x >= 0) {
-                            job.draw(offscreenCanvas); 
-                        }   
+                        if (job.x >= 0) {
+                            job.draw(offscreenCanvas);
+                        }
                     });
-    
+
                     //bitblt offscreen canvas on main canvas:
                     targetCanvas.getContext('2d').drawImage(offscreenCanvas, 0, 0);
                 }
-        
+
                 function updateGraphics() {
                     let canvas = document.getElementById("queueGraph");
                     drawLatenctServiceTimeGraph(canvas);
-        
-                    requestAnimationFrame(updateGraphics);           
+
+                    requestAnimationFrame(updateGraphics);
                 }
 
                 function calcNewAutoAddJobsMs() {
                     autoAddJobMs_from = Number(document.getElementById('inp_autoAddMs_from').value);
                     autoAddJobMs_to = Number(document.getElementById('inp_autoAddMs_to').value);
-                    g_autoAddJobMs = Math.random() * (autoAddJobMs_to -  autoAddJobMs_from) + autoAddJobMs_from;
+                    g_autoAddJobMs = Math.random() * (autoAddJobMs_to - autoAddJobMs_from) + autoAddJobMs_from;
                 }
-        
+
                 function tick() {
-                    if(g_autoAddJobMs >= 10 ) {
-                        if((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs / g_simSpeed) {
+                    if (g_autoAddJobMs >= 10) {
+                        if ((new Date).getTime() - g_lastTimeAutoAdded >= g_autoAddJobMs / g_simSpeed) {
                             addJobsToQueue();
                             g_lastTimeAutoAdded = (new Date()).getTime();
                             calcNewAutoAddJobsMs();
                         }
                     }
-                    
-                    if(g_activeJob == null) {
-                        if(g_jobs.length >= 0) {
+
+                    if (g_activeJob == null) {
+                        if (g_jobs.length >= 0) {
                             g_activeJob = g_jobs[0];
                         }
                     }
-                    
-                    if(g_jobs.length == 0 ) {
+
+                    if (g_jobs.length == 0) {
                         g_utilization = 0;
                     }
 
-                    if(g_activeJob) {                
+                    if (g_activeJob) {
                         g_activeJob.setActive(true);
                         g_utilization += g_activeJob.capacity;
                         g_utilization = Math.round(g_utilization / 2);
-                        if(g_activeJob.jobPerformed >= g_activeJob.capacity) {
-                            g_activeJob.moveX(g_activeJob.width+2);
+                        if (g_activeJob.jobPerformed >= g_activeJob.capacity) {
+                            g_activeJob.moveX(g_activeJob.width + 2);
                             g_activeJob = null;
                             g_jobs.shift();
                         }
                     }
-        
+
                     g_latency = 0;
-                    for(let i=0; i<g_jobs.length; i++) {                    
+                    for (let i = 0; i < g_jobs.length; i++) {
                         let job = g_jobs[i];
-                        if(i==0) {
+                        if (i == 0) {
                             g_latency += job.capacity - job.jobPerformed;
                         }
-                        if(i>0) {
+                        if (i > 0) {
                             g_latency += job.capacity;
                         }
                         g_latency = Math.round(g_latency);
-                        job.tick();                    
+                        job.tick();
                     }
 
                     xPos++;
-                    if (xPos >= offscreenCanvas.width ) xPos = 0;
+                    if (xPos >= offscreenCanvas.width) xPos = 0;
 
-                    if(g_useLatencyGraphType_1) {                        
-                        g_latencyGraph.push(g_latency);                        
-                        if(g_latencyGraph.length >= offscreenCanvas.width) {
+                    if (g_useLatencyGraphType_1) {
+                        g_latencyGraph.push(g_latency);
+                        if (g_latencyGraph.length >= offscreenCanvas.width) {
                             g_latencyGraph.shift();
-                        } 
-                    } else {                        
-                        g_latencyGraph[xPos] = g_latency;                        
+                        }
+                    } else {
+                        g_latencyGraph[xPos] = g_latency;
                     }
 
-                    if(g_latency > 2000) {
-                        g_latencyGraphYScale = .01;
-                    } else if(g_latency > 200) {
-                        g_latencyGraphYScale = .1;
-                    } else {
-                        g_latencyGraphYScale = 1;
-                    } 
+
+                    //latency graph auto scaling:                    
+                    let f = g_latency;
+                    let p = 1;
+                    while (f > 200) {
+                        f /= 10;
+                        p /= 10;
+                    }
+                    g_latencyGraphYScale = p;
                 }
-        
+
                 function createNewJob(capacity) {
-                    let job = new SimJob(capacity);      
-                    
-                    if(g_jobs.length > 0) {   
-                        let lastJob = g_jobs[g_jobs.length - 1];                
+                    let job = new SimJob(capacity);
+
+                    if (g_jobs.length > 0) {
+                        let lastJob = g_jobs[g_jobs.length - 1];
                         job.setHead(lastJob);
                         lastJob.setBack(job);
-                    }                    
-                    
+                    }
+
                     g_jobs.push(job);
                     return job;
                 }
-        
+
                 function addJobsToQueue() {
                     let jobsCount = Number(document.getElementById("inp_addJobsCount").value);
                     let jobServiceTimeFrom = Number(document.getElementById("inp_addJobsServTime_from").value) / 10;
                     let jobServiceTimeTo = Number(document.getElementById("inp_addJobsServTime_to").value) / 10;
-        
-                    for(let i=0; i<jobsCount; i++) {
+
+                    for (let i = 0; i < jobsCount; i++) {
                         let jobServiceTime = Math.random() * (jobServiceTimeTo - jobServiceTimeFrom) + jobServiceTimeFrom;
                         createNewJob(jobServiceTime);
                     }
                 }
-        
+
                 function changeSimSpeed() {
                     let speed = Number(document.getElementById("inp_simSpeed").value);
                     let newSpeed = speed;
                     clearInterval(g_simSpeed);
                     g_simSpeed = setInterval(tick, newSpeed);
                 }
-        
+
                 function toggleAutoAdd(checkElem) {
-                    if(checkElem.checked) {
-                        calcNewAutoAddJobsMs();              
+                    if (checkElem.checked) {
+                        calcNewAutoAddJobsMs();
                     }
                     else {
                         g_autoAddJobMs = 0;
                     }
                 }
-    
+
                 function clearJobsQueue() {
                     g_jobs = [];
                     g_activeJob = null;
@@ -360,90 +380,106 @@
 
                 function initLatencyGraph() {
                     g_latencyGraph = [];
-                    for(let i=0; i<offscreenCanvas.width; i++) {
+                    for (let i = 0; i < offscreenCanvas.width; i++) {
                         g_latencyGraph.push(0);
                     }
                 }
-        
-             function init() {
-        
-                    console.log("init called");                
-        
+
+                function init() {
+
+                    console.log("init called");
+
                     offscreenCanvas = document.createElement('canvas');
                     offscreenCanvas.getContext('2d').translate(-.5, -.5);
-        
+
                     let targetCanvas = document.getElementById("queueGraph");
                     let ctx = targetCanvas.getContext("2d");
 
                     clearJobsQueue();
-        
+
                     g_simSpeed = window.setInterval(tick, 10);
-        
+
                     calcLatencyServiceTime();
-        
+
                     updateGraphics();
                 }
-        
-        
-            </script>
-        
-            <style>
-                body {
-                    background-color: black;
-                    color: gray;
-                }
-                #div_queueSim {
-                    background-color: #1a1a1a;
-                    border-style:solid; border-width:1px; border-radius:4px;
-                    width: 700px;
-                }              
-    
-                input {
-                    border-radius:4px; height:30px; vertical-align: middle;
-                    background-color: gray;
-                    width: 50px;
-                }
-            
-                button {
-                    border-radius:4px; height:30px; vertical-align: middle;
-                }
 
-                #inp_checkAutoAdd {
-                    border-radius:4px; height:30px; vertical-align: middle;
-                    background-color: gray;
-                    width: 10px;
 
-                }
-            </style>
-        
-        </head>
-        
-        <body onload="init();">
-            <h3>Queue Calc</h1>
-            Service Time(ms):
-            <input id="inp_serviceTime" type="number" value="1000" onchange="calcLatencyServiceTime();" />ms</br>
-            Utilization(%):
-            <input id="inp_utilization" type="range" min="0" max="100" value="50" onchange="calcLatencyServiceTime();" />
-            <span id="span"></span>
-            </br>
-        
-            Wait Time:(ms)
-            <div id="ans_latencyServiceTime"></div>
-        
-            <div id="div_queueSim">
+    </script>
+
+    <style>
+        body {
+            background-color: black;
+            color: gray;
+        }
+
+        #div_queueSim {
+            background-color: #1a1a1a;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 4px;
+            width: 700px;
+        }
+
+        input {
+            border-radius: 4px;
+            height: 30px;
+            vertical-align: middle;
+            background-color: gray;
+            width: 50px;
+        }
+
+        button {
+            border-radius: 4px;
+            height: 30px;
+            vertical-align: middle;
+        }
+
+        #inp_checkAutoAdd {
+            border-radius: 4px;
+            height: 30px;
+            vertical-align: middle;
+            background-color: gray;
+            width: 10px;
+
+        }
+    </style>
+
+</head>
+
+<body onload="init();">
+    <h3>Queue Calc</h1>
+        Service Time(ms):
+        <input id="inp_serviceTime" type="number" value="1000" onchange="calcLatencyServiceTime();" />ms</br>
+        Utilization(%):
+        <input id="inp_utilization" type="range" min="0" max="100" value="50" onchange="calcLatencyServiceTime();" />
+        <span id="span"></span>
+        </br>
+
+        Wait Time:(ms)
+        <div id="ans_latencyServiceTime"></div>
+
+        <div id="div_queueSim">
             <h3>Queue Simulator</h1>
-            <div>
-                <!-- Simulation speed: <input id="inp_simSpeed" type="range" min="1" max="10" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/> -->
-                <button id="but_clearQueue" onclick="clearJobsQueue();">Clear Queue</button>
-            </div>
-    
-            Add <input id="inp_addJobsCount" type="number" value="1"/> jobs with service time of [ <input id="inp_addJobsServTime_from" type="number" min="10" max="1000" value="1000"/>
-             to <input id="inp_addJobsServTime_to" type="number" min="10" max="1000" value="1000"/> ]
-            <button onclick="addJobsToQueue();"> Add </button>
-            <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" text="Every"/> Every [ <input id="inp_autoAddMs_from" type="number" min="10" max="10000" value="500"/> to  <input id="inp_autoAddMs_to" type="number" min="10" max="10000" value="500"/> ] ms 
-            </div>
-        
-            <div style="background-color:black;"><canvas id="queueGraph" width="600" height="600"></canvas></div>
-        </body>
-        
-        </html>
+                <div>
+                    <!-- Simulation speed: <input id="inp_simSpeed" type="range" min="1" max="10" value="10" onchange="changeSimSpeed();"/><span id="span_simSpeed"/> -->
+                    <button id="but_clearQueue" onclick="clearJobsQueue();">Clear Queue</button>
+                </div>
+
+                Add
+                <input id="inp_addJobsCount" type="number" value="1" /> jobs with service time of [
+                <input id="inp_addJobsServTime_from" type="number" min="10" max="1000" value="1000"
+                /> to
+                <input id="inp_addJobsServTime_to" type="number" min="10" max="1000" value="1000" /> ]
+                <button onclick="addJobsToQueue();"> Add </button>
+                <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" text="Every" /> Every [
+                <input id="inp_autoAddMs_from" type="number" min="10" max="10000" value="500" /> to
+                <input id="inp_autoAddMs_to" type="number" min="10" max="10000" value="500" /> ] ms
+        </div>
+
+        <div style="background-color:black;">
+            <canvas id="queueGraph" width="600" height="600"></canvas>
+        </div>
+</body>
+
+</html>
