@@ -50,7 +50,7 @@
 
             ctx.fillStyle = "#000000";
             ctx.textAlign = 'center';
-            ctx.font = '14px sans-serif';
+            ctx.font = 'small-caption';
             ctx.fillText(this.text, this.width / 2, this.height / 2);
 
             targetCanvas.getContext('2d').drawImage(this.canvas, x, y);
@@ -103,6 +103,9 @@
 
     <script>        
                 var g_queueGraphCanvas = null;
+                var g_mouseX = 0;
+                var g_mouseY = 0;
+
                 var g_simSpeed = 10;
                 var g_someObj = null;
                 var g_offscreenCanvas = null;
@@ -129,6 +132,25 @@
                     let waitTime = serviceTime / (1.0 - (utilization / 100.0));                    
                     document.getElementById('ans_latencyServiceTime').innerText = waitTime.toString();
                     document.getElementById('span').innerText = utilization.toString();
+                }
+
+                function drawLabel(ctx, text, x, y, width, height, txtFill, bgStroke, bgFill) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.fillStyle = bgFill;
+                    ctx.strokeStyle = bgStroke;                                        
+                    ctx.fillRect(x, y, width, height);
+                    ctx.strokeRect(x, y, width, height);
+                    ctx.restore();
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.fillStyle = txtFill;
+                    ctx.textAlign = 'start';                    
+                    ctx.font = 'small-caption';                   
+                    ctx.fillText(text, x + 10, y +14);                    
+                    ctx.stroke();
+                    ctx.restore();
                 }
 
                 function drawLatencyGraph(canvas) {
@@ -158,13 +180,11 @@
                     ctx.restore();
 
                     ctx.save();
-                    ctx.fillStyle = "#ffffff";
-                    ctx.strokeStyle = "#000000";
-                    let scaleText = "Scale: " + g_latencyGraphYScale;
+                    ctx.fillStyle = "#000000";                    
+                    let scaleText = "Scale: " + g_latencyGraphYScale.toFixed(2);
                     ctx.textAlign = "start";
                     ctx.font = "small-caption";
-                    ctx.fillText(scaleText, 10, canvas.height - 20);
-                    ctx.strokeText(scaleText, 10, canvas.height - 20);
+                    ctx.fillText(scaleText, 10, canvas.height - 20);                    
                     ctx.restore();
                 }                       
 
@@ -212,18 +232,34 @@
                         ctx.restore();
                     }
 
+                    //draw corshair:
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(255, 255, 255, .5)";                    
+                    ctx.moveTo(0, g_mouseY);
+                    ctx.lineTo(g_offscreenCanvas.width, g_mouseY);
+                    ctx.moveTo(g_mouseX, 0);
+                    ctx.lineTo(g_mouseX, g_offscreenCanvas.height);
+                    ctx.stroke();
+                    ctx.restore();
+                    
+
                     //draw queue size label:
                     ctx.save();
                     ctx.beginPath();
                     ctx.fillStyle = "#ffffff";
-                    ctx.strokeStyle = "#000000"
-                    ctx.fillRect(5, 5, 590, 20);
-                    ctx.strokeRect(5, 5, 590, 20);
-                    ctx.textAlign = 'top left';
-                    ctx.font = '14px sans-serif';
-                    let queueSizeLabel = "Queue size: " + g_jobs.length + " Arrival rate(λ): " + g_arrivalRate + " Utilization(μ): " + g_utilization + " Latency: " + g_latency + "ms";
-                    ctx.fillText(queueSizeLabel, 10, 20);
-                    ctx.strokeText(queueSizeLabel, 10, 20);
+                    ctx.strokeStyle = "#000000";
+                    let labelFrameWidth = g_offscreenCanvas.width - 20;
+                    let labelFrameX = (g_offscreenCanvas.width - labelFrameWidth) / 2;
+                    ctx.fillRect(labelFrameX, 5, labelFrameWidth, 25);
+                    ctx.strokeRect(labelFrameX, 5, labelFrameWidth, 25);
+
+                    ctx.fillStyle = "#000000";
+                    ctx.textAlign = 'left';                    
+                    ctx.font = 'small-caption';
+                    let queueSizeLabel = "Queue size: " + g_jobs.length + " Arrival rate(λ): " + g_arrivalRate + " Utilization(μ): " + g_utilization.toFixed(2) + " Latency: " + g_latency.toFixed(0) + "ms";
+                    console.log("mouseX=" + g_mouseX + " mouseY=" + g_mouseY);
+                    ctx.fillText(queueSizeLabel, labelFrameX + 10, 22);                    
                     ctx.stroke();
                     ctx.restore();
 
@@ -239,13 +275,22 @@
                         }
                     });
 
+                    for(let i=0; i<g_jobs.length; i++) {                        
+                        let job = g_jobs[i];
+                        if((g_mouseX > job.x) && (g_mouseX < (job.x+job.width)) && (g_mouseY > job.y) && (g_mouseY < (job.y + job.height))) {
+                            let jobToolTipText = "job capacity: " + job.capacity.toFixed(0);                            
+                            drawLabel(ctx, jobToolTipText, g_mouseX-60, g_mouseY-20, 120, 20, "#000000", "#000000", "rgba(255, 255, 0, .7");
+                            break;
+                        }
+                    }
+
                     //bitblt offscreen canvas on main canvas:
                     g_queueGraphCanvas.getContext('2d').drawImage(g_offscreenCanvas, 0, 0);
                 }
 
                 function updateSim() {          
                     updateSimData();          
-                    updateSimGraphics();                    
+                    updateSimGraphics();
                 }
 
                 function calcNewAutoAddJobsMs() {
@@ -275,14 +320,17 @@
 
                     if (g_activeJob) {
                         g_activeJob.setActive(true);
-                        g_utilization += g_activeJob.capacity;
-                        g_utilization = Math.round(g_utilization / 2);
+                        g_utilization = g_autoAddJobMs / (g_activeJob.capacity*10);
+                        //g_utilizationg_utilization += g_activeJob.capacity;
+                        //g_utilization = Math.round(g_utilization / 2);
                         if (g_activeJob.jobPerformed >= g_activeJob.capacity) {
                             g_activeJob.moveX(g_activeJob.width + 2);
                             g_activeJob = null;
                             g_jobs.shift();
                         }
                     }
+
+                    
 
                     g_latency = 0;
                     for (let i = 0; i < g_jobs.length; i++) {
@@ -294,8 +342,9 @@
                             g_latency += job.capacity*10;
                         }
                         job.tick();
-                    }
-                    g_latency = Math.round(g_latency);
+                    }        
+                    
+                    
 
                     g_xPos++;
                     if (g_xPos >= g_offscreenCanvas.width) g_xPos = 0;
@@ -392,6 +441,13 @@
                     console.log("init called");
 
                     g_queueGraphCanvas = document.getElementById('queueGraph');
+                    g_queueGraphCanvas.onmousemove = ((event) => {
+                        let rc = g_queueGraphCanvas.getBoundingClientRect();
+                        g_mouseX = event.clientX - rc.left;
+                        g_mouseY = event.clientY - rc.top;
+                    });
+
+                    
                     g_offscreenCanvas = document.createElement('canvas');
                     g_offscreenCanvas.getContext('2d').translate(-.5, -.5);                            
                     
