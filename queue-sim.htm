@@ -120,7 +120,7 @@
                 var g_latencyGraph = [];
                 var g_latencyGraphYScale = .1;
                 var g_latencyGraphPos = 0;
-                var g_useLatencyGraphType_1 = true;
+                var g_useLatencyGraphType_1 = false;
 
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
@@ -166,8 +166,7 @@
                     ctx.fillText(scaleText, 10, canvas.height - 20);
                     ctx.strokeText(scaleText, 10, canvas.height - 20);
                     ctx.restore();
-
-                }
+                }                       
 
                 function drawLatenctServiceTimeGraph(targetCanvas) {
                     offscreenCanvas.width = targetCanvas.width;
@@ -320,13 +319,18 @@
                     }                    
 
                     //latency graph auto scaling:
-                    let f = topLatency;
-                    let p = 0;
-                    while (f > 200.0) {
-                        f /= 10.0;                                                
-                        p++;                                                
+                    scaler = 1;
+                    if(topLatency > 0) {
+                        scaler = 200.0 /topLatency; 
                     }
-                    let scaler = 1 / Math.pow(10, p);   
+
+                    // let f = topLatency;
+                    // let p = 0;
+                    // while (f > 200.0) {
+                    //     f /= 10.0;                                                
+                    //     p++;                                                
+                    // }
+                    // let scaler = 1 / Math.pow(10, p);   
                     g_latencyGraphYScale = scaler;
 
                     for(let i=0; i < g_latencyGraph.length; i++) { 
@@ -395,15 +399,16 @@
                     offscreenCanvas.getContext('2d').translate(-.5, -.5);
 
                     let targetCanvas = document.getElementById("queueGraph");
-                    let ctx = targetCanvas.getContext("2d");
-
-                    clearJobsQueue();
+                    let ctx = targetCanvas.getContext("2d");        
+                    
 
                     g_simSpeed = window.setInterval(tick, 10);
 
                     calcLatencyServiceTime();
 
                     updateGraphics();
+
+                    clearJobsQueue();
                 }
 
 
@@ -470,13 +475,13 @@
 
                 Add
                 <input id="inp_addJobsCount" type="number" value="1" /> jobs with service time of [
-                <input id="inp_addJobsServTime_from" type="number" min="10" max="1000" value="1000"
+                <input id="inp_addJobsServTime_from" type="number" min="1" max="1000" value="1000"
                 /> to
-                <input id="inp_addJobsServTime_to" type="number" min="10" max="1000" value="1000" /> ]
+                <input id="inp_addJobsServTime_to" type="number" min="1" max="1000" value="1000" /> ] ms 
                 <button onclick="addJobsToQueue();"> Add </button>
                 <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" text="Every" /> Every [
-                <input id="inp_autoAddMs_from" type="number" min="10" max="10000" value="500" /> to
-                <input id="inp_autoAddMs_to" type="number" min="10" max="10000" value="500" /> ] ms
+                <input id="inp_autoAddMs_from" type="number" min="1" max="10000" value="500" /> to
+                <input id="inp_autoAddMs_to" type="number" min="1" max="10000" value="500" /> ] ms
         </div>
 
         <div style="background-color:black;">
