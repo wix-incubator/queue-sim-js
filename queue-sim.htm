@@ -126,6 +126,9 @@
                 var g_latencyGraphPos = 0;
                 var g_useLatencyGraphType_1 = false;
 
+                const LabelFillStyle = "rgba(255, 255, 0, 0.8";
+                const LabelBorderStyle = "#000000";
+
                 function calcLatencyServiceTime() {
                     let serviceTime = Number(document.getElementById('inp_serviceTime').value);
                     let utilization = Number(document.getElementById('inp_utilization').value);                    
@@ -134,21 +137,31 @@
                     document.getElementById('span').innerText = utilization.toString();
                 }
 
-                function drawLabel(ctx, text, x, y, width, height, txtFill, bgStroke, bgFill) {
+                function drawLabel(canvas, text, x, y, width, height, txtFill, bgStroke, bgFill) {
+                    let ctx = canvas.getContext('2d');
+                    let spacing = 5;
                     ctx.save();
+                    ctx.textAlign = 'start';
+                    ctx.font = 'small-caption';
+                    let txtWidth = ctx.measureText(text).width;                
+                    
+                    width = txtWidth > width ? txtWidth + spacing * 2 : width;
+                    if(width + x > canvas.width) {
+                        x = canvas.width - width;
+                    }
+                    
+                    
                     ctx.beginPath();
                     ctx.fillStyle = bgFill;
                     ctx.strokeStyle = bgStroke;                                        
                     ctx.fillRect(x, y, width, height);
-                    ctx.strokeRect(x, y, width, height);
-                    ctx.restore();
-
-                    ctx.save();
+                    ctx.strokeRect(x, y, width, height);                    
+                    
                     ctx.beginPath();
                     ctx.fillStyle = txtFill;
-                    ctx.textAlign = 'start';                    
-                    ctx.font = 'small-caption';                   
-                    ctx.fillText(text, x + 10, y +14);                    
+                    ctx.textAlign = 'start top';                    
+                                       
+                    ctx.fillText(text, x + spacing, y + 14);                    
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -170,7 +183,7 @@
                         let latency = g_latencyGraph[i].scaled;
                         let x = i * (canvas.width / g_latencyGraph.length);
                         let y = canvas.height - latency;
-                        ctx.lineTo(x, y);
+                        ctx.lineTo(x, y);                        
                     }
                     ctx.lineTo(canvas.width, canvas.height);
                     ctx.closePath();
@@ -186,7 +199,28 @@
                     ctx.font = "small-caption";
                     ctx.fillText(scaleText, 10, canvas.height - 20);                    
                     ctx.restore();
-                }                       
+                }       
+
+                function drawLatencyGraphLabel(canvas) {
+                    let ctx = canvas.getContext('2d');                    
+                    ctx.save(); 
+                    let indx = g_mouseX / (canvas.width / g_latencyGraph.length);
+                    
+                    let latencyAtIndx = canvas.height - g_latencyGraph[indx].scaled;
+                    if(g_mouseY > (latencyAtIndx-5) && g_mouseY < (latencyAtIndx+5) ) { 
+                        //draw label:
+                        drawLabel(canvas, "Latency: " + g_latencyGraph[indx].value.toFixed(0) + "ms", g_mouseX, g_mouseY-20, 0, 20, "#000000", LabelBorderStyle, LabelFillStyle);                                                 
+
+                        //draw designator:
+                        ctx.beginPath();                          
+                        ctx.fillStyle = LabelFillStyle;
+                        ctx.strokeSyle = LabelBorderStyle;
+                        ctx.arc(g_mouseX, latencyAtIndx, 5, 0, 6.28, false);
+                        ctx.fill();
+                        ctx.stroke();                        
+                    }
+                    ctx.restore();
+                }                
 
                 function updateSimGraphics() {                    
                     g_offscreenCanvas.width = g_queueGraphCanvas.width;
@@ -242,7 +276,8 @@
                     ctx.lineTo(g_mouseX, g_offscreenCanvas.height);
                     ctx.stroke();
                     ctx.restore();
-                    
+
+                                        
 
                     //draw queue size label:
                     ctx.save();
@@ -258,7 +293,7 @@
                     ctx.textAlign = 'left';                    
                     ctx.font = 'small-caption';
                     let queueSizeLabel = "Queue size: " + g_jobs.length + " Arrival rate(λ): " + g_arrivalRate + " Utilization(μ): " + g_utilization.toFixed(2) + " Latency: " + g_latency.toFixed(0) + "ms";
-                    console.log("mouseX=" + g_mouseX + " mouseY=" + g_mouseY);
+                    ////console.log("mouseX=" + g_mouseX + " mouseY=" + g_mouseY);
                     ctx.fillText(queueSizeLabel, labelFrameX + 10, 22);                    
                     ctx.stroke();
                     ctx.restore();
@@ -279,10 +314,13 @@
                         let job = g_jobs[i];
                         if((g_mouseX > job.x) && (g_mouseX < (job.x+job.width)) && (g_mouseY > job.y) && (g_mouseY < (job.y + job.height))) {
                             let jobToolTipText = "job capacity: " + job.capacity.toFixed(0);                            
-                            drawLabel(ctx, jobToolTipText, g_mouseX-60, g_mouseY-20, 120, 20, "#000000", "#000000", "rgba(255, 255, 0, .7");
+                            drawLabel(g_offscreenCanvas, jobToolTipText, g_mouseX-60, g_mouseY-20, 0, 20, "#000000", LabelBorderStyle, LabelFillStyle);
                             break;
                         }
                     }
+
+                    //draw the latency graph label when the mouse cursor is over a graph line:
+                    drawLatencyGraphLabel(g_offscreenCanvas);
 
                     //bitblt offscreen canvas on main canvas:
                     g_queueGraphCanvas.getContext('2d').drawImage(g_offscreenCanvas, 0, 0);
