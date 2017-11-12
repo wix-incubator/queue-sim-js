@@ -434,7 +434,10 @@
         }
 
         function addJobsToQueue() {
-            let jobsCount = Number(document.getElementById("inp_addJobsCount").value);
+            let jobsCountFrom = Number(document.getElementById("inp_addJobsCount_from").value);
+            let jobsCountTo = Number(document.getElementById("inp_addJobsCount_to").value);
+            let jobsCount = Math.random() * (jobsCountTo - jobsCountFrom) + jobsCountFrom;
+
             let jobServiceTimeFrom = Number(document.getElementById("inp_addJobsServTime_from").value) / 10;
             let jobServiceTimeTo = Number(document.getElementById("inp_addJobsServTime_to").value) / 10;
 
@@ -501,6 +504,7 @@
 
     <style>
         body {
+            font-size: 12px;
             background-color: black;
             color: gray;
         }
@@ -514,22 +518,24 @@
         }
 
         input {
+            font-size: 10px;
             border-radius: 4px;
-            height: 30px;
+            height: 20px;
             vertical-align: middle;
             background-color: gray;
             width: 50px;
         }
 
-        button {
+        button {     
+            font-size: 10px;       
             border-radius: 4px;
-            height: 30px;
+            height: 20px;
             vertical-align: middle;
         }
 
         #inp_checkAutoAdd, #inp_checkPauseSim {
             border-radius: 4px;
-            height: 30px;
+            height: 20px;
             vertical-align: middle;
             background-color: gray;
             width: 10px;
@@ -562,9 +568,9 @@
                     <input id="inp_checkPauseSim" type="checkbox" onchange="pauseSim(this);">Pause Sim</input>
                 </div>
 
-                Add
-                <input id="inp_addJobsCount" type="number" value="1" /> jobs with service time of [
-                <input id="inp_addJobsServTime_from" type="number" min="1" max="1000" value="1000" /> to
+                Add [
+                <input id="inp_addJobsCount_from" type="number" value="1" min="1" max="1000"/> to <input id="inp_addJobsCount_to" type="number" value="1" min="1" max="1000"/> jobs with service time of [
+                <input id="inp_addJobsServTime_from" type="number" min="1" max="1000" value="1000" /> ] to
                 <input id="inp_addJobsServTime_to" type="number" min="1" max="1000" value="1000" /> ] ms
                 <button onclick="addJobsToQueue();"> Add </button>
                 <input id="inp_checkAutoAdd" type="checkbox" onchange="toggleAutoAdd(this);" /> Every [
@@ -572,7 +578,7 @@
                 <input id="inp_autoAddMs_to" type="number" min="1" max="10000" value="500" /> ] ms
         </div>
 
-        <div style="background-color:black;">
+        <div style="background-color:black;" width="800" height="800">
             <canvas id="queueGraph" width="700" height="600"></canvas>
         </div>
 </body>
