@@ -151,7 +151,6 @@
                 x = canvas.width - width;
             }
 
-
             ctx.beginPath();
             ctx.fillStyle = bgFill;
             ctx.strokeStyle = bgStroke;
@@ -221,6 +220,19 @@
                 ctx.stroke();
             }
             ctx.restore();
+        }
+
+        function drawPauseLabel(canvas) {
+            let ctx = canvas.getContext('2d');
+            ctx.save();
+            let seed = (new Date().getMilliseconds());
+            let alpha = 1.0 - Math.sin(seed / 180); 
+            let fillStyle = "rgba(255, 0, 0, " + alpha + ")";
+            let strokeStyle = "rgba(255, 255, 0, " + alpha + ")";
+            let text = "Paused";
+            let x = canvas.width - ctx.measureText(text).width - 27;
+            drawLabel(canvas, text, x, 7, 0, 20, strokeStyle, "#000000", fillStyle);  
+            ctx.restore();          
         }
 
         function updateSimGraphics() {
@@ -297,6 +309,11 @@
             ctx.stroke();
             ctx.restore();
 
+            //Draw 'Paused' label to warn the user the simulation now is paused:
+            if(g_pauseSim) {
+                drawPauseLabel(g_offscreenCanvas);
+            }
+
             //draw frame:
             ctx.strokeStyle = "#000000";
             ctx.rect(0, 0, g_offscreenCanvas.width - .5, g_offscreenCanvas.height - .5);
@@ -321,7 +338,7 @@
             //draw the latency graph label when the mouse cursor is over a graph line:
             drawLatencyGraphLabel(g_offscreenCanvas);
 
-            //bitblt offscreen canvas on main canvas:
+            //bitblt offscreen canvas on main canvas:            
             g_queueGraphCanvas.getContext('2d').drawImage(g_offscreenCanvas, 0, 0);
         }
 
