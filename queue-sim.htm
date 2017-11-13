@@ -506,7 +506,6 @@
                 g_mouseY = event.clientY - rc.top;
             });
 
-
             g_offscreenCanvas = document.createElement('canvas');
             g_offscreenCanvas.getContext('2d').translate(-.5, -.5);
 
@@ -596,7 +595,7 @@
         </div>
 
         <div style="background-color:black;" width="800" height="800">
-            <canvas id="queueGraph" width="700" height="600"></canvas>
+            <canvas id="queueGraph" width="700" height="600" style="cursor: none;"></canvas>
         </div>
 </body>
 
